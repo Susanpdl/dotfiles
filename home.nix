@@ -34,6 +34,10 @@ in
     enable = true;
     autosuggestion.enable = true;      # ghost text from history
     syntaxHighlighting.enable = true;  # commands turn green when valid
+    completionInit = ''
+      fpath+=(/opt/homebrew/share/zsh/site-functions)
+      autoload -U compinit && compinit
+    '';
     initContent = ''
       bindkey '^f' autosuggest-accept
     '';
