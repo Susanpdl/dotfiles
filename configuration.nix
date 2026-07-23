@@ -28,16 +28,22 @@
   nix-homebrew = {
     enable = true;
     inherit user;
+    autoMigrate = true;
   };
   homebrew = {
     enable = true;
     onActivation.cleanup = "zap";  # remove anything not listed here
     onActivation.autoUpdate = true;
     onActivation.extraFlags = [ "--force" ];
+    taps = [
+      "mongodb/brew"
+    ];
     brews = [
       "gh"
       "go-task"
       "libomp"
+      "mongodb/brew/mongodb-community"
+      "mongodb/brew/mongodb-database-tools"
       "mongosh"
       "mysql"
       "nasm"
