@@ -35,11 +35,34 @@
     onActivation.autoUpdate = true;
     onActivation.extraFlags = [ "--force" ];
     brews = [
-      "herdr"
+      "gh"
+      "go-task"
+      "libomp"
+      "mongosh"
+      "mysql"
+      "nasm"
+      "nvm"
+      "openssl@1.1"
+      "pkgconf"
+      "poetry"
+      "postgresql@16"
+      "protobuf"
+      "python@3.11"
+      "rustup"
+      "sdl2_image"
+      "sdl2_mixer"
+      "sdl2_ttf"
+      "tectonic"
+      "tmux"
+      "uv"
     ];
     casks = [
-      "wezterm"
       "claude-code"
+      "copilot-cli"
+      "maccy"
+      "ngrok"
+      "pgadmin4"
+      "wezterm"
     ];
   };
 }
