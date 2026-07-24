@@ -67,6 +67,7 @@
       "maccy"
       "ngrok"
       "pgadmin4"
+      "font-hack-nerd-font"
       "wezterm"
     ];
   };
