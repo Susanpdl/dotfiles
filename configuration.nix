@@ -48,7 +48,6 @@
       "mysql"
       "nasm"
       "nvm"
-      "openssl@1.1"
       "pkgconf"
       "poetry"
       "postgresql@16"
