@@ -54,6 +54,7 @@ in
     settings = {
       add_newline = false;
       format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
+      git_branch.symbol = "git:";
       character = {
         success_symbol = "[❯](purple)";
         error_symbol = "[❯](red)";
