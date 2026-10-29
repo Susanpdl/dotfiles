@@ -23,7 +23,12 @@ set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-TMP_ROOT=$(dotfiles_test_tmproot pi-calm)
+dotfiles_test_tmproot TMP_ROOT pi-calm || exit 1
+SKIPPED=0
+skip() {
+  SKIPPED=$((SKIPPED + 1))
+  printf 'skip: %s\n' "$1"
+}
 CALM_DIR="$ROOT/home/.pi/agent/extensions/calm"
 PI_PACKAGE_DIR=${PI_CALM_TEST_PACKAGE_DIR:-"$(npm root -g 2>/dev/null)/@earendil-works/pi-coding-agent"}
 TMUX_SOCKET="pi-calm-test-$$"
@@ -154,9 +159,9 @@ test_static_typescript_and_repo_wiring() {
     || fail "terminal-status-title.js has a JavaScript syntax error"
 
   if ! have_pi_package; then
-    echo "skip: installed @earendil-works/pi-coding-agent package not found for TypeScript check"
+    skip "installed @earendil-works/pi-coding-agent package not found for TypeScript check"
   elif ! command -v tsc >/dev/null 2>&1; then
-    echo "skip: tsc not found for TypeScript check"
+    skip "tsc not found for TypeScript check"
   else
     local fixture="$TMP_ROOT/typecheck"
     build_node_fixture "$fixture"
@@ -181,19 +186,20 @@ test_static_typescript_and_repo_wiring() {
 JSON
     (cd "$fixture" && tsc -p tsconfig.json) \
       || fail "Pi Calm extension does not typecheck under strict TypeScript"
+    pass "Pi Calm extension typechecks under strict TypeScript"
   fi
 
-  pass "static wiring: Home Manager auto-load intact, TypeScript typechecks, existing JS extension parses"
+  pass "static wiring: Home Manager auto-load intact, existing JS extension parses"
 }
 
 test_preference_and_command() {
   local fixture out status
   if ! command -v node >/dev/null 2>&1; then
-    echo "skip: node not found for Pi Calm preference test"
+    skip "node not found for Pi Calm preference test"
     return 0
   fi
   if ! have_pi_package; then
-    echo "skip: installed @earendil-works/pi-coding-agent package not found"
+    skip "installed @earendil-works/pi-coding-agent package not found"
     return 0
   fi
 
@@ -338,7 +344,7 @@ JS
 test_rendering_adapters_and_tool_shells() {
   local fixture out status
   if ! command -v node >/dev/null 2>&1 || ! have_pi_package; then
-    echo "skip: node or installed Pi package not found for rendering contract"
+    skip "node or installed Pi package not found for rendering contract"
     return 0
   fi
 
@@ -459,7 +465,7 @@ JS
 test_working_ship_and_lifecycle() {
   local fixture out status
   if ! command -v node >/dev/null 2>&1 || ! have_pi_package; then
-    echo "skip: node or installed Pi package not found for working-ship contract"
+    skip "node or installed Pi package not found for working-ship contract"
     return 0
   fi
 
@@ -543,7 +549,7 @@ JS
 test_collapsed_thinking_degradation() {
   local fixture out status
   if ! command -v node >/dev/null 2>&1 || ! have_pi_package; then
-    echo "skip: node or installed Pi package not found for adapter degradation"
+    skip "node or installed Pi package not found for adapter degradation"
     return 0
   fi
 
@@ -585,7 +591,7 @@ JS
 test_real_pi_tui_smoke() {
   local fixture agent project socket pane i
   if ! command -v pi >/dev/null 2>&1 || ! command -v tmux >/dev/null 2>&1; then
-    echo "skip: pi or tmux not found for isolated real TUI smoke"
+    skip "pi or tmux not found for isolated real TUI smoke"
     return 0
   fi
   [ "$(pi --version 2>/dev/null || true)" = "0.82.0" ] \
@@ -595,6 +601,7 @@ test_real_pi_tui_smoke() {
   agent="$fixture/agent"
   project="$fixture/project"
   socket="pi-calm-smoke-$$"
+  TMUX_SOCKET="$socket"
   mkdir -p "$agent/extensions" "$project" "$fixture/captures" "$fixture/sessions"
   capture_tui() {
     local label=$1
@@ -714,3 +721,10 @@ test_rendering_adapters_and_tool_shells
 test_working_ship_and_lifecycle
 test_collapsed_thinking_degradation
 test_real_pi_tui_smoke
+
+if [ "$SKIPPED" -gt 0 ]; then
+  printf 'incomplete: %s checks skipped; Pi compatibility is unverified\n' "$SKIPPED"
+  if [ "${PI_CALM_REQUIRE_DEPS:-0}" = 1 ]; then
+    fail "required Pi Calm checks were skipped"
+  fi
+fi

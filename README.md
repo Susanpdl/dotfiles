@@ -1,8 +1,16 @@
 # dotfiles
 
+<p align="center">
+  <a href="https://discord.gg/Wsy2NpnZDu"
+    ><img
+      alt="Discord"
+      src="https://img.shields.io/discord/1439901831038763092?style=flat-square&label=discord"
+  /></a>
+</p>
+
 Watch the walkthrough: https://youtu.be/5N-okeDdIuI
 
-My personal Mac setup, managed with nix-darwin and home-manager.
+Susan Poudel's Mac setup, forked from [kunchenguid/dotfiles](https://github.com/kunchenguid/dotfiles) and managed with nix-darwin and home-manager.
 One repo, one command, and a fresh Mac ends up configured the same way every time.
 
 ## Contributing / Using This Repo
@@ -17,7 +25,8 @@ Running the switch builds:
 
 - System settings (dark mode, key repeat, dock, Finder, trackpad)
 - Homebrew apps (casks and CLI tools)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, Hack Nerd Font)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim)
+- Hack Nerd Font installed through Homebrew so macOS applications can find it
 - Shell (zsh, aliases, starship prompt)
 - Editor (Neovim config with the rose-pine moon theme)
 - Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
@@ -35,7 +44,7 @@ Running the switch builds:
 On a brand new Mac, from a bare clone of this repo:
 
 ```sh
-git clone https://github.com/kunchenguid/dotfiles.git
+git clone https://github.com/Susanpdl/dotfiles.git
 cd dotfiles
 ```
 
@@ -80,39 +89,56 @@ Edit the config files in place, then apply:
 That's it.
 No separate build-and-copy step.
 
+## Keeping this fork current
+
+`origin` is this fork; `upstream` is the original repository.
+Commit your local work before merging upstream changes, then review the result to preserve this fork's username, Git identity, package lists, and system preferences.
+
+```sh
+git fetch upstream
+git merge upstream/main
+nix flake update
+nix flake check --no-build
+nix build .#darwinConfigurations.mac.system --dry-run
+```
+
+`nix flake update` refreshes dependency pins within the release branches declared in `flake.nix`.
+It does not apply the configuration or update Pi's deliberately pinned third-party packages.
+Use `./rebuild.sh` after reviewing and validating the changes.
+
+## Tests
+
+```sh
+bash tests/lib.test.sh
+bash tests/pi-calm.test.sh
+```
+
+Pi Calm's behavioral tests need Pi 0.82.0, Node.js, TypeScript, and tmux.
+Missing dependencies produce explicit skips and an incomplete summary.
+To require all checks to run, use `PI_CALM_REQUIRE_DEPS=1 bash tests/pi-calm.test.sh`.
+The compatibility proof remains specific to Pi 0.82.0; newer Pi releases require a fresh validation run.
+
 ## Make it yours
 
 This repo is mine.
 If you clone it, review these before you run `bootstrap.sh`:
 
-- **Username**: run `./bootstrap.sh` (it detects your macOS username and offers to set it) OR change the single `user = "kunchen"` line in `flake.nix`.
+- **Username**: run `./bootstrap.sh` (it detects your macOS username and offers to set it) OR change the single `user = "spoudel"` line in `flake.nix`.
   Everything else (`configuration.nix`, `home.nix`, home directory paths) is threaded from that one variable.
 - **Host label** `"mac"`, in three places: `flake.nix` (the `darwinConfigurations."mac"` name), `rebuild.sh:5` (the `#mac` at the end of the flake reference), and `bootstrap.sh`'s first-switch command (also `#mac`).
   All three have to match.
 - **CPU architecture**, `hostPlatform` in `configuration.nix` (see Prerequisites above).
 
-**Git identity:** this config deliberately does not set your git name or email.
-Git will stop your first commit and tell you to set them (`git config --global user.name "Your Name"` and `git config --global user.email you@example.com`).
-If you'd rather manage that declaratively, add this back to `home.nix` with your own identity:
-
-```nix
-programs.git = {
-  enable = true;
-  settings.user = {
-    name = "Your Name";
-    email = "you@example.com";
-  };
-};
-```
+**Git identity:** `home.nix` declares this fork's Git name and email in `programs.git.settings.user`.
+Change those values before applying this configuration on someone else's machine.
 
 **Homebrew cleanup warning:** `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.
 That means every time you switch, Homebrew removes any package or cask on your machine that isn't listed in the `brews` and `casks` arrays in `configuration.nix`.
 If you already have Homebrew stuff installed that isn't in that list, the first switch will uninstall it.
 Read through `brews` and `casks` before you run `bootstrap.sh` or `rebuild.sh` for the first time, and add anything you want to keep.
 
-**About `herdr`:** it's in the `brews` list.
-It's a real public Homebrew formula (`brew info herdr` finds it in homebrew-core, no tap needed), so it will install fine.
-If you don't use it, just remove it from `brews` in your copy.
+**About `herdr`:** this fork does not install it.
+The configuration under `home/.config/herdr/` is retained as a reference and is not linked by Home Manager.
 
 **Heads-up:**
 
@@ -139,7 +165,8 @@ You only run `./rebuild.sh` when you change something that isn't just a symlinke
 
 ## Optional Pi configuration
 
-Pi is an opt-in CLI, not a dependency this repository vendors. Install it from its owner with the [official Pi instructions](https://pi.dev), for example:
+Pi is an opt-in CLI, not a dependency this repository vendors.
+Install it from its owner with the [official Pi instructions](https://pi.dev), for example:
 
 ```sh
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
@@ -151,26 +178,46 @@ npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 brew install --cask kunchenguid/tap/pi-launcher
 ```
 
-Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
+Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`.
+It also links `models.json` and `settings.json` as individual files.
+The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there.
+Run `/reload` after editing a local extension or other Pi resources.
+The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory.
+The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
 
 ### Pi Calm
 
-`home/.pi/agent/extensions/calm` is a standalone local Pi extension. Home Manager's existing global extensions-directory link makes Pi auto-load it without another declaration. `/calm` toggles a conversation-only presentation mode and is off by default. Its choice is stored locally in `~/.pi/agent/calm` (or the directory selected by `PI_CODING_AGENT_DIR`), not in this repository or Home Manager. Adapted from Firstmate under the bundled MIT license, Calm imports no Firstmate modules and has no Firstmate runtime dependency.
+`home/.pi/agent/extensions/calm` is a standalone local Pi extension.
+Home Manager's existing global extensions-directory link makes Pi auto-load it without another declaration.
+`/calm` toggles a conversation-only presentation mode and is off by default.
+Its choice is stored locally in `~/.pi/agent/calm` (or the directory selected by `PI_CODING_AGENT_DIR`), not in this repository or Home Manager.
+Adapted from Firstmate under the bundled MIT license, Calm imports no Firstmate modules and has no Firstmate runtime dependency.
 
-When enabled, Calm hides collapsed thinking and the call/result shells for Pi's seven built-in tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, and `ls`) without leaving blank transcript rows. During an active run it replaces Pi's working row with a two-line animated blue-water, yellow-boat widget. `/calm` restores Pi's stock rendering and preserves the existing Ctrl+O tool-expansion choice.
+When enabled, Calm hides collapsed thinking and the call/result shells for Pi's seven built-in tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, and `ls`) without leaving blank transcript rows.
+During an active run it replaces Pi's working row with a two-line animated blue-water, yellow-boat widget.
+`/calm` restores Pi's stock rendering and preserves the existing Ctrl+O tool-expansion choice.
 
-Calm never changes prompts, tool execution, model context, session data, or ordering. `/share` and `/export` use the complete stock transcript. Generic custom tools, images, and unsupported Pi transcript classes deliberately remain visible because Pi has no safe general-purpose transcript filter. If a future Pi release no longer exports the exact collapsed-thinking rendering seam, Calm logs one diagnostic and leaves only that adapter disabled; all other behavior remains available.
+Calm never changes prompts, tool execution, model context, session data, or ordering.
+`/share` and `/export` use the complete stock transcript.
+Generic custom tools, images, and unsupported Pi transcript classes deliberately remain visible because Pi has no safe general-purpose transcript filter.
+If a future Pi release no longer exports the exact collapsed-thinking rendering seam, Calm logs one diagnostic and leaves only that adapter disabled; all other behavior remains available.
 
 Pi's package system declares two third-party sources in the linked global `settings.json`:
 
+- `npm:pi-web-access@0.14.0` - the exact public npm release for web access.
 - `npm:@ryan_nookpi/pi-extension-codex-fast-mode@0.2.6` - the exact public npm release from `ryan_nookpi`.
-- `git:github.com/algal/pi-openai-server-compaction@c6d593087709e9481223dc6c6c2269b371b5e055` - the exact public `algal` commit for experimental OpenAI server-side compaction.
 
-The version and commit are immutable pins, so Pi does not move them during package updates. Deliberate updates require a new source and security audit, followed by an explicit pin change in `home/.pi/agent/settings.json`. On Pi 0.82.0, global settings declarations install missing pinned packages automatically at startup. No one-time install command is required. Pi keeps the downloaded npm and git package trees in its own unmanaged `~/.pi/agent/npm` and `~/.pi/agent/git` runtime directories, outside Home Manager and Git tracking.
+The versions are immutable pins, so Pi does not move them during package updates.
+Deliberate updates require a new source and security audit, followed by an explicit pin change in `home/.pi/agent/settings.json`.
+On Pi 0.82.0, global settings declarations install missing pinned packages automatically at startup.
+No one-time install command is required.
+Pi keeps the downloaded npm package trees in its own unmanaged `~/.pi/agent/npm` runtime directory, outside Home Manager and Git tracking.
 
-Both packages execute with your full user permissions and must be trusted like any other executable code. The compaction package is experimental, sends the relevant OpenAI compaction and continuity data to OpenAI, and upstream declares the stale peer range `>=0.80.9 <0.81.0`; this exact immutable ref was locally proven to load and perform remote compaction on Pi 0.82.0. Do not treat that proof as a guarantee for a different Pi version or a different package ref.
+Both packages execute with your full user permissions and must be trusted like any other executable code.
 
-Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. This remains an additive post-video layer: it does not install Pi, a launcher, or package source code into this repository.
+Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state.
+The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself.
+This remains an additive post-video layer: it does not install Pi, a launcher, or package source code into this repository.
 
 ## Notes
 

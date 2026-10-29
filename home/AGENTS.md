@@ -23,3 +23,10 @@
   - Large calls: lay the options out fully - the additive fix vs. the structural one, the tradeoffs, and your own recommendation. Don't start the structural change until the user has chosen.
   - Inside a plan you're already presenting, folding the structural option in is fine - just make it visible, don't bury it.
   - Always include your own recommendation; a neutral menu with no opinion is not what the user wants.
+
+## Maintaining this file
+
+Keep this file for knowledge useful to almost every future agent session in this project.
+Do not repeat what the codebase already shows; point to the authoritative file or command instead.
+Prefer rewriting or pruning existing entries over appending new ones.
+When updating this file, preserve this bar for all agents and keep entries concise.
